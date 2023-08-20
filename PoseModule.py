@@ -89,6 +89,22 @@ def main():
     pTime = 0
     detector = poseDetector()
     scale_percent = 120  # percent of original size
+    axisXleft = []
+    axisYleft = []
+    axisXright = []
+    axisYright = []
+    detaXleft = 0
+    detaYleft = 0
+    detaXright = 0
+    detaYright = 0
+    p1 = (100, 500)
+    p2 = (150, 500)
+    p3 = (125, 450)
+    q1 = (600, 500)
+    q2 = (650, 500)
+    q3 = (625, 450)
+    num = 0
+
     while True:
         success, img = cap.read()
         width = int(img.shape[1] * scale_percent / 100)
@@ -102,17 +118,54 @@ def main():
         img = detector.findPose(resized)
         lmList = detector.findPosition(resized, draw=False)
         if len(lmList) != 0:
-            print(lmList[15],lmList[16])
-            #cv2.circle(img, (lmList[16][1], lmList[16][2]), 10, (0, 255, 0), cv2.FILLED)
-            #cv2.circle(img, (lmList[15[1], lmList[15][2]), 10, (0, 255, 0), 2)
+            #print(f"left wrist (x, y): {lmList[15][1:]} right wrist (x, y): {lmList[16][1:]}")
+            Asst = math.dist(lmList[15][1:], lmList[16][1:])
+            if Asst > 132:
+                axisXleft.append(lmList[15][2])
+                print(axisXleft)
+                for axisX in axisYleft:
+                    detaXleft =  axisXleft[1] - axisXleft[0]
+                    axisXleft.pop(0)
+                    if detaXleft > 2 or detaXleft < -2:
+                        cv2.line(resized, p1, p2, (0, 0, 255), 2)
+                        cv2.line(resized, p2, p3, (0, 0, 255), 2)
+                        cv2.line(resized, p1, p3, (0, 0, 255), 2)
 
+
+                    else:
+                        cv2.circle(resized, (125,500), 15, (0, 255, 0), 2)
+
+                axisXright.append(lmList[16][1])
+                if len(axisXright) > 1:
+                    detaXright = axisXright[1] - axisXright[0]
+                    axisXright.pop(0)
+
+                    if detaXright > 4 or detaXright < -4:
+                        cv2.line(resized, q1, q2, (0, 0, 255), 2)
+                        cv2.line(resized, q2, q3, (0, 0, 255), 2)
+                        cv2.line(resized, q1, q3, (0, 0, 255), 2)
+
+                    elif -4 <= detaXright <= 4 :
+                        cv2.circle(resized, (625,500), 15, (0, 255, 0), 2)
+                #print(f"deta x: {detaX} Type:{type(detaX)} deta y: {detaY} ")
+                #cv2.circle(img, (lmList[16][1], lmList[16][2]), 10, (0, 255, 0), cv2.FILLED)
+                #cv2.circle(img, (lmList[15[1], lmList[15][2]), 10, (0, 255, 0), 2)
+
+
+            elif Asst <= 132:
+                cv2.rectangle(resized, (100,500), (150,450), (255, 0, 0), 2)
+                cv2.rectangle(resized, (600, 500), (650, 450), (255, 0, 0), 2)
+
+                #print(Asst)
 
         cTime = time.time()
         fps = 1 / (cTime - pTime)
         pTime = cTime
 
+
         cv2.putText(resized, str(int(fps)), (70, 50), cv2.FONT_ITALIC, 1,
                     (0, 255, 0), 3)
+
 
         cv2.imshow("Image", resized)
         #cv2.imshow("ImageRGB", imgRGB)
