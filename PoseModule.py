@@ -74,14 +74,14 @@ class poseDetector():
         if draw:
             cv2.line(img, (x1, y1), (x2, y2), (255, 255, 255), 3)
             cv2.line(img, (x3, y3), (x2, y2), (255, 255, 255), 3)
-            cv2.circle(img, (x1, y1), 10, (0, 0, 255), cv2.FILLED)
-            cv2.circle(img, (x1, y1), 15, (0, 0, 255), 2)
-            cv2.circle(img, (x2, y2), 10, (0, 0, 255), cv2.FILLED)
-            cv2.circle(img, (x2, y2), 15, (0, 0, 255), 2)
-            cv2.circle(img, (x3, y3), 10, (0, 0, 255), cv2.FILLED)
-            cv2.circle(img, (x3, y3), 15, (0, 0, 255), 2)
+            cv2.circle(img, (x1, y1), 10, (51, 255, 51), cv2.FILLED)
+            #cv2.circle(img, (x1, y1), 15, (153, 0, 0), 2)
+            cv2.circle(img, (x2, y2), 10, (51, 255, 51), cv2.FILLED)
+            cv2.circle(img, (x2, y2), 15, (153, 0, 0), 2)
+            cv2.circle(img, (x3, y3), 10, (51, 255, 51), cv2.FILLED)
+            cv2.circle(img, (x3, y3), 15, (153, 0, 0), 2)
             cv2.putText(img, str(int(angle)), (x2 - 50, y2 + 50),
-                        cv2.FONT_HERSHEY_PLAIN, 2, (0, 0, 255), 2)
+                        cv2.FONT_HERSHEY_PLAIN, 2, (51, 0, 0), 2)
         return angle
 
 def main():
@@ -89,21 +89,12 @@ def main():
     pTime = 0
     detector = poseDetector()
     scale_percent = 120  # percent of original size
-    axisXleft = []
-    axisYleft = []
-    axisXright = []
-    axisYright = []
-    detaXleft = 0
-    detaYleft = 0
-    detaXright = 0
-    detaYright = 0
-    p1 = (100, 500)
-    p2 = (150, 500)
-    p3 = (125, 450)
-    q1 = (600, 500)
-    q2 = (650, 500)
-    q3 = (625, 450)
-    num = 0
+    stepL = 0
+    stepR = 0
+    start_moveL = 0
+    end_moveL = 0
+    start_moveR = 0
+    end_moveR = 0
 
     while True:
         success, img = cap.read()
@@ -115,48 +106,63 @@ def main():
         # print('Resized Dimensions : ', resized.shape)
 
         #cv2.imshow("Resized image", resized)
-        img = detector.findPose(resized)
+        img = detector.findPose(resized, draw=False)
         lmList = detector.findPosition(resized, draw=False)
+        ##print(shoulder)
         if len(lmList) != 0:
-            #print(f"left wrist (x, y): {lmList[15][1:]} right wrist (x, y): {lmList[16][1:]}")
-            Asst = math.dist(lmList[15][1:], lmList[16][1:])
-            if Asst > 132:
-                axisXleft.append(lmList[15][2])
-                print(axisXleft)
-                for axisX in axisYleft:
-                    detaXleft =  axisXleft[1] - axisXleft[0]
-                    axisXleft.pop(0)
-                    if detaXleft > 2 or detaXleft < -2:
-                        cv2.line(resized, p1, p2, (0, 0, 255), 2)
-                        cv2.line(resized, p2, p3, (0, 0, 255), 2)
-                        cv2.line(resized, p1, p3, (0, 0, 255), 2)
 
+            shoulder = math.dist(lmList[11][1:], lmList[12][1:])
 
-                    else:
-                        cv2.circle(resized, (125,500), 15, (0, 255, 0), 2)
+            assembly = math.dist(lmList[15][1:], lmList[16][1:])
+            print(assembly)
 
-                axisXright.append(lmList[16][1])
-                if len(axisXright) > 1:
-                    detaXright = axisXright[1] - axisXright[0]
-                    axisXright.pop(0)
+            p1 = (lmList[11][1] - 15, lmList[11][2] + 15)
+            p2 = (lmList[11][1] + 15, lmList[11][2] + 15)
+            p3 = (lmList[11][1], lmList[11][2] - 15)
+            q1 = (lmList[12][1] - 15, lmList[12][2] + 15)
+            q2 = (lmList[12][1] + 15, lmList[12][2] + 15)
+            q3 = (lmList[12][1], lmList[12][2] - 15)
 
-                    if detaXright > 4 or detaXright < -4:
-                        cv2.line(resized, q1, q2, (0, 0, 255), 2)
-                        cv2.line(resized, q2, q3, (0, 0, 255), 2)
-                        cv2.line(resized, q1, q3, (0, 0, 255), 2)
+            if assembly > 180:
+                angL = detector.findAngle(resized, 11, 13, 15)
+                if angL > 210:
+                    cv2.circle(resized, (lmList[11][1:]), 15, (0, 255, 0), 4)
+                    if stepL == 1:
+                        end_moveL = time.time()
+                        stepL = 0
+                        #print(f"total time_L: {end_moveL - start_moveL}")
 
-                    elif -4 <= detaXright <= 4 :
-                        cv2.circle(resized, (625,500), 15, (0, 255, 0), 2)
-                #print(f"deta x: {detaX} Type:{type(detaX)} deta y: {detaY} ")
-                #cv2.circle(img, (lmList[16][1], lmList[16][2]), 10, (0, 255, 0), cv2.FILLED)
-                #cv2.circle(img, (lmList[15[1], lmList[15][2]), 10, (0, 255, 0), 2)
+                else:
+                    cv2.line(resized, p1, p2, (0, 0, 255), 4)
+                    cv2.line(resized, p2, p3, (0, 0, 255), 4)
+                    cv2.line(resized, p1, p3, (0, 0, 255), 4)
+                    if stepL == 0:
+                        start_moveL = time.time()
+                        stepL = 1
 
+                angR = detector.findAngle(resized, 12, 14, 16)
+                if angR < 165:
+                    cv2.circle(resized, (lmList[12][1:]), 15, (0, 255, 0), 4)
+                    if stepR == 1:
+                        end_moveR = time.time()
+                        stepR = 0
+                        #print(f"total time_R: {end_moveR - start_moveR}")
 
-            elif Asst <= 132:
-                cv2.rectangle(resized, (100,500), (150,450), (255, 0, 0), 2)
-                cv2.rectangle(resized, (600, 500), (650, 450), (255, 0, 0), 2)
+                else:
+                    cv2.line(resized, q1, q2, (0, 0, 255), 4)
+                    cv2.line(resized, q2, q3, (0, 0, 255), 4)
+                    cv2.line(resized, q1, q3, (0, 0, 255), 4)
+                    if stepR == 0:
+                        start_moveR = time.time()
+                        stepR = 1
 
-                #print(Asst)
+            else:
+                detector.findAngle(resized, 11, 13, 15)
+                detector.findAngle(resized, 12, 14, 16)
+                cv2.rectangle(resized, (lmList[11][1] - 15, lmList[11][2] + 15), (lmList[11][1] + 15, lmList[11][2] - 15), (255, 0, 0), 4)
+                cv2.rectangle(resized, (lmList[12][1] - 15, lmList[12][2] + 15), (lmList[12][1] + 15, lmList[12][2] - 15), (255, 0, 0), 4)
+
+            #print(f"time move: {start_moveL} time stop: {end_moveL}")
 
         cTime = time.time()
         fps = 1 / (cTime - pTime)
